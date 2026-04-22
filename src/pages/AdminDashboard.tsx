@@ -1,12 +1,17 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Inbox, Phone, Mail, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Inbox, Phone, Mail, Calendar, Eye, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api-client';
+import { toast } from 'sonner';
 import type { Lead, LeadStatus } from '@shared/types';
 const statusMap: Record<LeadStatus, { label: string, color: string }> = {
   pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700 border-amber-200' },
@@ -14,13 +19,26 @@ const statusMap: Record<LeadStatus, { label: string, color: string }> = {
   completed: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
 };
 export function AdminDashboard() {
+  const queryClient = useQueryClient();
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { data, isLoading } = useQuery({
     queryKey: ['leads'],
-    queryFn: async () => {
-      const res = await fetch('/api/leads');
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error);
-      return json.data as { items: Lead[], next: string | null };
+    queryFn: () => api<{ items: Lead[], next: string | null }>('/api/leads'),
+  });
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string, status: LeadStatus }) => {
+      return api<Lead>(`/api/leads/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.success('Status updated successfully');
+      setSelectedLead(null);
+    },
+    onError: (err: Error) => {
+      toast.error('Failed to update status', { description: err.message });
     }
   });
   const leads = data?.items ?? [];
@@ -91,21 +109,18 @@ export function AdminDashboard() {
                     <TableHead>Service</TableHead>
                     <TableHead>Preferred Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Received</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {leads.map((lead) => (
-                    <TableRow key={lead.id} className="group cursor-default hover:bg-muted/30">
+                    <TableRow key={lead.id} className="group hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-semibold text-foreground">{lead.name}</span>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="flex items-center text-xs text-muted-foreground gap-1">
                               <Mail className="h-3 w-3" /> {lead.email}
-                            </span>
-                            <span className="flex items-center text-xs text-muted-foreground gap-1">
-                              <Phone className="h-3 w-3" /> {lead.phone}
                             </span>
                           </div>
                         </div>
@@ -122,12 +137,19 @@ export function AdminDashboard() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${statusMap[lead.status].color} font-medium border`}>
+                        <Badge className={`${statusMap[lead.status].color} font-medium border shadow-none`}>
                           {statusMap[lead.status].label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground text-xs">
-                        {format(lead.createdAt, 'MMM d, p')}
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setSelectedLead(lead)}
+                          className="hover:bg-emerald-50 hover:text-emerald-600"
+                        >
+                          <Eye className="h-4 w-4 mr-1" /> View
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -137,6 +159,67 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+      <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Lead Details</DialogTitle>
+            <DialogDescription>
+              Review lead information and update current status.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLead && (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <span className="text-muted-foreground block">Customer</span>
+                  <span className="font-medium">{selectedLead.name}</span>
+                </div>
+                <div className="space-y-1 text-right">
+                  <span className="text-muted-foreground block">Phone</span>
+                  <a href={`tel:${selectedLead.phone}`} className="font-medium text-emerald-600 hover:underline">{selectedLead.phone}</a>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-muted-foreground block">Email</span>
+                  <span className="font-medium break-all">{selectedLead.email}</span>
+                </div>
+                <div className="space-y-1 text-right">
+                  <span className="text-muted-foreground block">Zip Code</span>
+                  <span className="font-medium">{selectedLead.zipCode}</span>
+                </div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Items Description</h4>
+                <p className="text-sm leading-relaxed">{selectedLead.itemsDescription}</p>
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Update Lead Status</label>
+                <Select 
+                  defaultValue={selectedLead.status} 
+                  onValueChange={(val: LeadStatus) => updateStatusMutation.mutate({ id: selectedLead.id, status: val })}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="contacted">Contacted</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+                {updateStatusMutation.isPending && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Saving...
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedLead(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

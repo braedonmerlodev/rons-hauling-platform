@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Env } from './core-utils';
 import { UserEntity, ChatBoardEntity, LeadEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
-import type { Lead } from "@shared/types";
+import type { Lead, LeadStatus } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   app.get('/api/test', (c) => c.json({ success: true, data: { name: 'CF Workers Demo' }}));
   // LEADS
@@ -32,6 +32,19 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const created = await LeadEntity.create(c.env, lead);
     return ok(c, created);
   });
+  app.patch('/api/leads/:id', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json() as { status: LeadStatus };
+    if (!['pending', 'contacted', 'completed'].includes(body.status)) {
+      return bad(c, 'Invalid status update');
+    }
+    const leadEntity = new LeadEntity(c.env, id);
+    if (!(await leadEntity.exists())) {
+      return notFound(c, 'Lead not found');
+    }
+    const updated = await leadEntity.mutate(s => ({ ...s, status: body.status }));
+    return ok(c, updated);
+  });
   // USERS
   app.get('/api/users', async (c) => {
     await UserEntity.ensureSeed(c.env);
@@ -59,7 +72,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const created = await ChatBoardEntity.create(c.env, { id: crypto.randomUUID(), title: title.trim(), messages: [] });
     return ok(c, { id: created.id, title: created.title });
   });
-  // MESSAGES
   app.get('/api/chats/:chatId/messages', async (c) => {
     const chat = new ChatBoardEntity(c.env, c.req.param('chatId'));
     if (!await chat.exists()) return notFound(c, 'chat not found');
@@ -73,8 +85,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (!await chat.exists()) return notFound(c, 'chat not found');
     return ok(c, await chat.sendMessage(userId, text.trim()));
   });
-  // DELETE: Users
   app.delete('/api/users/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await UserEntity.delete(c.env, c.req.param('id')) }));
-  // DELETE: Chats
   app.delete('/api/chats/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await ChatBoardEntity.delete(c.env, c.req.param('id')) }));
 }

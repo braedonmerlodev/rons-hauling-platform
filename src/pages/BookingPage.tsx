@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Truck, Clock, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Truck, Clock, Loader2 } from 'lucide-react';
 const bookingSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
@@ -54,6 +54,7 @@ export function BookingPage() {
         });
       }
     } catch (error) {
+      console.error("Booking Error:", error);
       toast.error("Network Error", {
         description: "Please check your connection and try again.",
       });
@@ -63,7 +64,6 @@ export function BookingPage() {
     <PublicLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12 md:py-20 flex flex-col lg:flex-row gap-16">
-          {/* Left Column: Info */}
           <div className="lg:w-1/3 space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl font-display font-bold">Book Your Quote</h1>
@@ -92,9 +92,8 @@ export function BookingPage() {
               </div>
             </div>
           </div>
-          {/* Right Column: Form */}
           <div className="flex-1">
-            <Card className="border-none shadow-glass max-w-2xl">
+            <Card className="border-none shadow-soft max-w-2xl">
               <CardHeader className="border-b bg-muted/30">
                 <CardTitle>Request Free Estimate</CardTitle>
                 <CardDescription>Fill out the details below and we'll reach out within 2 hours.</CardDescription>
@@ -145,7 +144,7 @@ export function BookingPage() {
                       <Label htmlFor="preferredDate">Preferred Date</Label>
                       <div className="relative">
                         <Input id="preferredDate" type="date" {...register('preferredDate')} className="bg-background pl-10" />
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                       </div>
                       {errors.preferredDate && <p className="text-xs text-destructive">{errors.preferredDate.message}</p>}
                     </div>
