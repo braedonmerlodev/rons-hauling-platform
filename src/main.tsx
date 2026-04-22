@@ -14,6 +14,7 @@ import '@/index.css'
 import { HomePage } from '@/pages/HomePage'
 import { ServicesPage } from '@/pages/ServicesPage'
 import { BookingPage } from '@/pages/BookingPage'
+import { AdminDashboard } from '@/pages/AdminDashboard'
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
@@ -29,6 +30,11 @@ const router = createBrowserRouter([
   {
     path: "/book",
     element: <BookingPage />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/admin",
+    element: <AdminDashboard />,
     errorElement: <RouteErrorBoundary />,
   },
 ]);

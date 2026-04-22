@@ -73,7 +73,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               <h3 className="font-semibold mb-4 text-foreground">Company</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#" className="hover:text-emerald-600">About Us</a></li>
-                <li><a href="#" className="hover:text-emerald-600">Pricing Guide</a></li>
+                <li><Link to="/admin" className="hover:text-emerald-600">Admin Dashboard</Link></li>
                 <li><a href="#" className="hover:text-emerald-600">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-emerald-600">Terms of Service</a></li>
               </ul>
