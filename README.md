@@ -1,6 +1,6 @@
 # Clearpath Hauling
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/braedonmerlodev/rons-hauling-platform)
 
 A modern full-stack chat application built with Cloudflare Workers, React, and Durable Objects. This project demonstrates a production-ready setup with real-time messaging, user management, and indexed entity storage using Cloudflare's edge platform.
 
@@ -124,7 +124,7 @@ Deploy to Cloudflare Workers with zero-config:
 
 Your app will be live at `https://<name>.<subdomain>.workers.dev`.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/braedonmerlodev/rons-hauling-platform)
 
 ## Local Testing Workers
 
