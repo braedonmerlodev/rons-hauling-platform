@@ -4,7 +4,7 @@
  */
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "vite-cf-do-runner",
+	"name": "clearpath-hauling-l-4tmu_6ym5hqi_9j11da",
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-04-24",
 	"assets": {
